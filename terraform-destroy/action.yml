@@ -14,7 +14,7 @@ outputs:
     value: ${{ steps.terraform-plan.outputs.has_changes }}
   artifact_name:
     description: Name of the uploaded destroy plan artifact
-    value: ${{ steps.archive-destroy-name.outputs.archive_name }}
+    value: ${{ steps.archive-destroy.outputs.archive_name }}
 
 runs:
   using: "composite"
@@ -91,8 +91,13 @@ runs:
         path: ${{ inputs.working_directory }}/tfplan-destroy
 
     - name: set archive name output
-      id: archive-destroy-name
+      id: archive-destroy
+      working-directory: ${{ inputs.working_directory }}
       shell: bash
       run: |
-        echo "archive_name=tfplan-destroy" >> "$GITHUB_OUTPUT"
-   
+        echo "archive_name=tfplan-destroy" >> $GITHUB_OUTPUT
+
+    - name: check output
+      shell: bash
+      run: |
+        echo ${{ GITHUB_OUTPUT }}

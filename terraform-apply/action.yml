@@ -5,6 +5,7 @@ inputs:
   working_directory:
     description: Terraform root directory
     required: true
+
   terraform_version:
     description: Terraform CLI version
     required: true
