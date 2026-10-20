@@ -1,0 +1,98 @@
+name: Terraform Destroy
+description: Destroy Terraform configuration using a previously generated plan file.
+
+inputs:
+  working_directory:
+    description: Terraform root directory
+    required: true
+  terraform_version:
+    description: Terraform CLI version
+    required: true
+outputs:
+  has_changes:
+    description: Whether the destroy plan contains changes
+    value: ${{ steps.terraform-plan.outputs.has_changes }}
+  artifact_name:
+    description: Name of the uploaded destroy plan artifact
+    value: ${{ steps.archive-destroy-name.outputs.archive_name }}
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      with:
+        persist-credentials: false
+
+    - name: setup-initiate-cache terraform
+      uses: shivakpkp/terraform-actions/terraform-init-cache-setup@v1.0.0
+      with:
+        working_directory: ${{ inputs.working_directory }}
+        terraform_version: ${{ inputs.terraform_version }}
+
+    - name: Diagnose Terraform backend
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo "Current directory:"
+        pwd
+   
+        echo "Initialized backend:"
+        if [ -f .terraform/terraform.tfstate ]; then
+          jq '.backend | {
+            type,
+            config: (.config | {
+              resource_group_name,
+              storage_account_name,
+              container_name,
+              key
+            })
+          }' .terraform/terraform.tfstate
+        else
+          echo "No backend metadata found in this directory."
+        fi
+   
+        echo "Current workspace:"
+        terraform workspace show
+   
+        echo "Tracked resources:"
+        terraform state list
+   
+    - name: Terraform plan
+      id: terraform-plan
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+          exit_code=0
+          terraform plan -destroy -input=false -detailed-exitcode -out=tfplan-destroy || exit_code=$?
+          case "$exit_code" in
+            0)
+              echo "has_changes=false" >> "$GITHUB_OUTPUT"
+              ;;
+            2)
+              echo "has_changes=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Terraform plan failed."
+              exit "$exit_code"
+              ;;
+          esac
+          
+    - name: Show has Change result
+      shell: bash
+      run: |
+        echo "has_changes=${{ steps.terraform-plan.outputs.has_changes }}"
+
+    - name: archive plan output
+      uses: actions/upload-artifact@v7
+      with:
+        name: tfplan-destroy
+        path: ${{ inputs.working_directory }}/tfplan-destroy
+
+    - name: set archive name output
+      id: archive-destroy-name
+      shell: bash
+      run: |
+        echo "archive_name=tfplan-destroy" >> "$GITHUB_OUTPUT"
+   
