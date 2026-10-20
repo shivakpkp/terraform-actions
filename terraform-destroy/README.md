@@ -21,7 +21,7 @@ Add this step to your workflow job:
 
 ```yaml
 - name: Create destroy plan
-  uses: shivakpkp/terraform-actions/terraform-destroy@v1.0.0
+  uses: shivakpkp/terraform-actions/terraform-destroy@v1.0.6
   with:
     working_directory: environment/dev
     terraform_version: "1.5.7"
