@@ -1,0 +1,60 @@
+name: Terraform plan action
+description: Run Terraform plan in a reusable workflow
+
+inputs:
+  working_directory:
+    description: Terraform root directory
+    required: true
+  terraform_version:
+    description: Terraform CLI version
+    required: true
+
+
+outputs:
+  has-changes:
+    description: Indicates whether there are changes in the Terraform plan
+    value: ${{ steps.terraform-plan.outputs.has_changes }}
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      with:
+        persist-credentials: false
+
+    - name: Run Terraform setup-init-cache
+      uses: shivakpkp/terraform-actions/terraform-init-cache-setup@v1.0.0
+      with:
+        working_directory: "${{ inputs.working_directory }}"
+        terraform_version: "${{ inputs.terraform_version }}"
+
+    - name: Terraform plan
+      id: terraform-plan
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+          exit_code=0
+          terraform plan -input=false -detailed-exitcode -out=tfplan || exit_code=$?
+          case "$exit_code" in
+            0)
+              echo "has_changes=false" >> "$GITHUB_OUTPUT"
+              ;;
+            2)
+              echo "has_changes=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Terraform plan failed."
+              exit "$exit_code"
+              ;;
+          esac
+          
+    - name: Show has Change result
+      shell: bash
+      run: |
+        echo "has_changes=${{ steps.terraform-plan.outputs.has_changes }}"
+
+    - name: archive plan output
+      uses: actions/upload-artifact@v7
+      with:
+        name: tfplan
+        path: ${{ inputs.working_directory }}/tfplan
