@@ -1,0 +1,40 @@
+name: Terraform Apply
+description: Apply Terraform configuration using a previously generated plan file.
+
+inputs:
+  working_directory:
+    description: Terraform root directory
+    required: true
+  terraform_version:
+    description: Terraform CLI version
+    required: true
+
+  plan_artifact_name:
+    description: Name of the Terraform plan artifact to download and apply
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      with:
+        persist-credentials: false
+
+    - name: Setup-initiate-cache Terraform
+      uses: shivakpkp/terraform-actions/terraform-init-cache-setup@v1.0.0
+      with:
+        working_directory: ${{ inputs.working_directory }}
+        terraform_version: ${{ inputs.terraform_version }}
+
+    - uses: actions/download-artifact@v8
+      with:
+        name: ${{ inputs.plan_artifact_name }}
+        path: ${{inputs.working_directory}}
+
+    - name: Terraform apply
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        terraform apply -input=false -auto-approve ${{ inputs.plan_artifact_name }}
