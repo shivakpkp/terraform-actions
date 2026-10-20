@@ -14,6 +14,10 @@ outputs:
   has-changes:
     description: Indicates whether there are changes in the Terraform plan
     value: ${{ steps.terraform-plan.outputs.has_changes }}
+  artifact_name:
+    description: Name of the uploaded plan artifact
+    value: ${{ steps.archive-plan-name.outputs.archive_name }}
+    
 runs:
   using: "composite"
   steps:
@@ -58,3 +62,9 @@ runs:
       with:
         name: tfplan
         path: ${{ inputs.working_directory }}/tfplan
+
+    - name: set archive name output
+      id: archive-plan-name
+      shell: bash
+      run: |
+        echo "archive_name=tfplan" >> "$GITHUB_OUTPUT"
