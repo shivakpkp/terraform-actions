@@ -60,10 +60,11 @@ jobs:
     steps:
       - name: Create plan
         id: plan
-        uses: shivakpkp/terraform-actions/terraform-plan@c2aff50610321fce2f47d31653652e46d23a64a3
+        uses: shivakpkp/terraform-actions/terraform-plan@1e84ec37dda9edc4f44fcf21c81903ac98764de7
         with:
           working_directory: environment/dev
           terraform_version: "1.5.7"
+          plan_artifact_name: plan-dev
 
   apply:
     needs: plan
@@ -72,11 +73,12 @@ jobs:
     environment: dev
     steps:
       - name: Apply saved plan
-        uses: shivakpkp/terraform-actions/terraform-apply@c2aff50610321fce2f47d31653652e46d23a64a3
+        uses: shivakpkp/terraform-actions/terraform-apply@1e84ec37dda9edc4f44fcf21c81903ac98764de7
         with:
           working_directory: environment/dev
           terraform_version: "1.5.7"
           plan_artifact_name: ${{ needs.plan.outputs.artifact_name }}
+          plan_file_name: tfplan
 ```
 
 Create the `dev` GitHub Environment before running this example. Configure required reviewers if you want an approval before apply; an environment name alone does not enforce approval. If credentials are environment-scoped, configure the appropriate environment on each job that needs them.
@@ -85,8 +87,8 @@ Use a concurrency group shared by workflows targeting the same state. Plan and a
 
 ## Saved plans
 
-- Plan uploads `tfplan`; destroy planning uploads `tfplan-destroy`.
-- Apply currently expects the artifact name to match the plan filename inside it.
-- Use one plan artifact of each name per workflow run; configurable artifact names are not yet supported.
+- Deployment planning saves `tfplan` and uploads it under `plan_artifact_name` (default: `tfplan`). Use unique artifact names for multiple environment jobs in the same run.
+- Apply accepts a separate `plan_file_name`. When omitted, it uses the artifact name to preserve existing callers.
+- Destroy planning still uses the fixed artifact and filename `tfplan-destroy`; its interface is unchanged.
 - Saved plans may contain sensitive values. Restrict access to workflow artifacts and select an appropriate repository retention policy.
 - Approval gates and workflow permissions are configured by the calling workflow.

@@ -9,6 +9,10 @@ inputs:
     description: Terraform CLI version
     required: true
 
+  plan_artifact_name:
+    description: Name of the uploaded plan artifact
+    required: false
+    default: tfplan
 
 outputs:
   has-changes:
@@ -16,7 +20,7 @@ outputs:
     value: ${{ steps.terraform-plan.outputs.has_changes }}
   artifact_name:
     description: Name of the uploaded plan artifact
-    value: ${{ steps.archive-plan-name.outputs.archive_name }}
+    value: ${{ inputs.plan_artifact_name }}
     
 runs:
   using: "composite"
@@ -60,11 +64,7 @@ runs:
     - name: archive plan output
       uses: actions/upload-artifact@v7
       with:
-        name: tfplan
+        name: ${{ inputs.plan_artifact_name }}
         path: ${{ inputs.working_directory }}/tfplan
+        if-no-files-found: error
 
-    - name: set archive name output
-      id: archive-plan-name
-      shell: bash
-      run: |
-        echo "archive_name=tfplan" >> "$GITHUB_OUTPUT"
