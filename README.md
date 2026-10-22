@@ -89,6 +89,6 @@ Use a concurrency group shared by workflows targeting the same state. Plan and a
 
 - Deployment planning saves `tfplan` and uploads it under `plan_artifact_name` (default: `tfplan`). Use unique artifact names for multiple environment jobs in the same run.
 - Apply accepts a separate `plan_file_name`. When omitted, it uses the artifact name to preserve existing callers.
-- Destroy planning still uses the fixed artifact and filename `tfplan-destroy`; its interface is unchanged.
+- Destroy planning saves `tfplan-destroy` and uploads it under `plan_artifact_name` (default: `tfplan-destroy`). When using a custom artifact name, pass `plan_file_name: tfplan-destroy` to apply. See the [destroy example](terraform-destroy/README.md).
 - Saved plans may contain sensitive values. Restrict access to workflow artifacts and select an appropriate repository retention policy.
 - Approval gates and workflow permissions are configured by the calling workflow.
