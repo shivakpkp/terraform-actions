@@ -8,13 +8,18 @@ inputs:
   terraform_version:
     description: Terraform CLI version
     required: true
+  plan_artifact_name:
+    description: Name of the uploaded destroy plan artifact
+    required: false
+    default: tfplan-destroy
+
 outputs:
   has_changes:
     description: Whether the destroy plan contains changes
     value: ${{ steps.terraform-plan.outputs.has_changes }}
   archive_name:
     description: Name of the uploaded destroy plan artifact
-    value: ${{ steps.archive-destroy.outputs.archive_name }}
+    value: ${{ inputs.plan_artifact_name }}
 
 runs:
   using: "composite"
@@ -82,18 +87,15 @@ runs:
     - name: archive plan output
       uses: actions/upload-artifact@v7
       with:
-        name: tfplan-destroy
+        name: ${{ inputs.plan_artifact_name }}
         path: ${{ inputs.working_directory }}/tfplan-destroy
-
-    - name: set archive name output
-      id: archive-destroy
-      working-directory: ${{ inputs.working_directory }}
-      shell: bash
-      run: |
-        echo "archive_name=tfplan-destroy" >> "$GITHUB_OUTPUT"
+        if-no-files-found: error
 
     - name: Show has Change result
       shell: bash
+      env:
+        HAS_CHANGES: ${{ steps.terraform-plan.outputs.has_changes }}
+        PLAN_ARTIFACT_NAME: ${{ inputs.plan_artifact_name }}
       run: |
-        echo "has_changes=${{ steps.terraform-plan.outputs.has_changes }}"
-        echo "archive_name=${{ steps.archive-destroy.outputs.archive_name }}"
+        printf 'has_changes=%s\n' "$HAS_CHANGES"
+        printf 'archive_name=%s\n' "$PLAN_ARTIFACT_NAME"
