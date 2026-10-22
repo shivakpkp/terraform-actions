@@ -1,5 +1,5 @@
 name: Terraform Destroy
-description: Destroy Terraform configuration using a previously generated plan file.
+description: Create and upload a Terraform destroy plan for a separate apply step.
 
 inputs:
   working_directory:

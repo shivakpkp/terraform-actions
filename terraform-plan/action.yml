@@ -1,5 +1,5 @@
 name: Terraform plan action
-description: Run Terraform plan in a reusable workflow
+description: Create and upload a saved Terraform plan using a composite action.
 
 inputs:
   working_directory:

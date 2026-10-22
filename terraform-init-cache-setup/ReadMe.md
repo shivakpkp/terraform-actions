@@ -115,7 +115,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform and initialize backend
-        uses: YOUR_GITHUB_USERNAME/terraform-actions/terraform-init-cache-setup@v1
+        uses: shivakpkp/terraform-actions/terraform-init-cache-setup@c2aff50610321fce2f47d31653652e46d23a64a3
         with:
           terraform_version: "1.5.7"
           working_directory: environment/POC
@@ -127,13 +127,11 @@ jobs:
 
 Replace:
 
-- `YOUR_GITHUB_USERNAME` with the owner of the action repository.
-- `@v1` with an existing tag or commit SHA in that repository.
+- The pinned commit SHA when adopting a newer reviewed release.
 - `terraform_version` with the version required by your project.
 - `working_directory` with your Terraform root directory.
 
-Create the `v1` tag before using the example as written. For immutable references,
-pin the action to a full commit SHA.
+The examples use a full commit SHA for an immutable action reference.
 
 If your secrets and variables are stored in a GitHub Environment, add
 `environment: YOUR_ENVIRONMENT` to the job.
@@ -142,7 +140,7 @@ If your secrets and variables are stored in a GitHub Environment, add
 
 ```yaml
 - name: Setup Terraform and initialize backend
-  uses: YOUR_GITHUB_USERNAME/terraform-actions/terraform-init-cache-setup@v1
+  uses: shivakpkp/terraform-actions/terraform-init-cache-setup@c2aff50610321fce2f47d31653652e46d23a64a3
   with:
     terraform_version: "1.5.7"
     working_directory: environment/POC

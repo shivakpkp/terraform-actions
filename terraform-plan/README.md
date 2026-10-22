@@ -4,12 +4,12 @@ A composite GitHub Action that initializes Terraform, creates a plan, detects ch
 
 ## Usage
 
-Add this step to your workflow job. Replace `<ref>` with a published tag or commit SHA and `infrastructure` with your Terraform root directory.
+Add this step to your workflow job. The example pins a reviewed commit. Replace `infrastructure` with your Terraform root directory.
 
 ```yaml
 - name: Terraform plan
   id: plan
-  uses: shivakpkp/github-actions/terraform-actions/terraform-plan@<ref>
+  uses: shivakpkp/terraform-actions/terraform-plan@c2aff50610321fce2f47d31653652e46d23a64a3
   with:
     working_directory: infrastructure
     terraform_version: "1.5.7"
@@ -24,11 +24,12 @@ Provide cloud credentials and backend settings through the calling job's environ
 | `working_directory` | Yes | Path to the Terraform root directory. |
 | `terraform_version` | Yes | Terraform CLI version to install. |
 
-## Output
+## Outputs
 
 | Output | Description |
 | --- | --- |
 | `has-changes` | Returns `'true'` when the plan contains changes; otherwise `'false'`. |
+| `artifact_name` | Name of the uploaded artifact: `tfplan`. |
 
 Use the output in subsequent steps:
 
