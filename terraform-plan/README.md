@@ -29,7 +29,6 @@ Provide cloud credentials and backend settings through the calling job's environ
 | Output | Description |
 | --- | --- |
 | `has-changes` | Returns `'true'` when the plan contains changes; otherwise `'false'`. |
-
 | `artifact_name` | Name of the uploaded artifact: `tfplan`. |
 
 Use the output in subsequent steps:
