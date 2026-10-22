@@ -11,8 +11,13 @@ inputs:
     required: true
 
   plan_artifact_name:
-    description: Name of the Terraform plan artifact to download and apply
+    description: Name of the Terraform plan artifact to download
     required: true
+
+  plan_file_name:
+    description: Saved plan filename inside the artifact; defaults to plan_artifact_name for compatibility
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -37,5 +42,11 @@ runs:
     - name: Terraform apply
       shell: bash
       working-directory: ${{ inputs.working_directory }}
+      env:
+        PLAN_FILE_NAME: ${{ inputs.plan_file_name || inputs.plan_artifact_name }}
       run: |
-        terraform apply -input=false -auto-approve ${{ inputs.plan_artifact_name }}
+        if [[ ! -f "$PLAN_FILE_NAME" ]]; then
+          echo "::error::Saved Terraform plan file was not found."
+          exit 1
+        fi
+        terraform apply -input=false -auto-approve "./$PLAN_FILE_NAME"
