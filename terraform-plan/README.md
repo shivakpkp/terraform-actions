@@ -9,10 +9,11 @@ Add this step to your workflow job. The example pins a reviewed commit. Replace 
 ```yaml
 - name: Terraform plan
   id: plan
-  uses: shivakpkp/terraform-actions/terraform-plan@c2aff50610321fce2f47d31653652e46d23a64a3
+  uses: shivakpkp/terraform-actions/terraform-plan@1e84ec37dda9edc4f44fcf21c81903ac98764de7
   with:
     working_directory: infrastructure
     terraform_version: "1.5.7"
+    plan_artifact_name: plan-dev
 ```
 
 Provide cloud credentials and backend settings through the calling job's environment, as required by the setup/init action.
@@ -23,13 +24,14 @@ Provide cloud credentials and backend settings through the calling job's environ
 | --- | --- | --- |
 | `working_directory` | Yes | Path to the Terraform root directory. |
 | `terraform_version` | Yes | Terraform CLI version to install. |
+| `plan_artifact_name` | No | Uploaded artifact name. Defaults to `tfplan`. |
 
 ## Outputs
 
 | Output | Description |
 | --- | --- |
 | `has-changes` | Returns `'true'` when the plan contains changes; otherwise `'false'`. |
-| `artifact_name` | Name of the uploaded artifact: `tfplan`. |
+| `artifact_name` | Selected artifact name, such as `plan-dev`; defaults to `tfplan`. |
 
 Use the output in subsequent steps:
 
@@ -41,4 +43,6 @@ Use the output in subsequent steps:
 
 ## Plan Artifact
 
-The plan is saved to `<working_directory>/tfplan` and uploaded as the `tfplan` artifact for use in a later apply job. Planning errors fail the action; no infrastructure changes are applied.
+The saved file is always `<working_directory>/tfplan`. Its artifact name is configurable and defaults to `tfplan`. Use unique names such as `plan-dev` and `plan-prod` for multiple planning jobs in one workflow run.
+
+When applying the example above, pass `plan_artifact_name: plan-dev` and `plan_file_name: tfplan` to the apply action. The artifact name identifies the package; the filename identifies the plan inside it. Planning errors fail the action; no infrastructure changes are applied.
