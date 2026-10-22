@@ -1,6 +1,6 @@
 # Terraform Destroy
 
-Creates a Terraform destroy plan and uploads it as the `tfplan-destroy` artifact for later use. **This action does not delete resources or apply the plan.**
+Creates a Terraform destroy plan and uploads it under a configurable artifact name (default: `tfplan-destroy`) for later use. **This action does not delete resources or apply the plan.**
 
 ## What it does
 
@@ -14,6 +14,7 @@ Creates a Terraform destroy plan and uploads it as the `tfplan-destroy` artifact
 | --- | --- | --- |
 | `working_directory` | Yes | Directory containing your Terraform configuration. |
 | `terraform_version` | Yes | Terraform CLI version to install. |
+| `plan_artifact_name` | No | Artifact name. Defaults to `tfplan-destroy`. |
 
 ## Example
 
@@ -22,10 +23,11 @@ Add this step to your workflow job:
 ```yaml
 - name: Create destroy plan
   id: destroy_plan
-  uses: shivakpkp/terraform-actions/terraform-destroy@c2aff50610321fce2f47d31653652e46d23a64a3
+  uses: shivakpkp/terraform-actions/terraform-destroy@88d4f8315b18253db89e1381d9b7d8f5178abfb5
   with:
     working_directory: environment/dev
     terraform_version: "1.5.7"
+    plan_artifact_name: destroy-dev
 ```
 
 Replace `environment/dev` with your Terraform root directory. The example pins a reviewed commit.
@@ -34,21 +36,58 @@ Configure Azure authentication in the calling job using `ARM_CLIENT_ID`, `ARM_CL
 
 ## Artifact
 
-Download `tfplan-destroy` from the workflow run to access the saved destroy plan. Applying it requires a separate Terraform apply step.
+The saved file is always `tfplan-destroy`. The example uploads it as the `destroy-dev` artifact. Use unique artifact names for multiple environments in the same run. Applying the saved plan requires a separate Terraform apply step.
 
 ## Outputs
 
 | Output | Description |
 | --- | --- |
 | `has_changes` | Returns `'true'` when resources would change; otherwise `'false'`. |
-| `archive_name` | Name of the uploaded artifact: `tfplan-destroy`. |
+| `archive_name` | Selected artifact name, such as `destroy-dev`; defaults to `tfplan-destroy`. |
 
-For a later apply job, expose the step outputs on the destroy-plan job:
+## Pass the plan to an apply job
+
+The following jobs belong in a manually triggered workflow. Set the Azure credentials and backend variables described above for both jobs. Use the same Terraform configuration, version, provider lock file, and backend for planning and applying.
 
 ```yaml
-outputs:
-  has_changes: ${{ steps.destroy_plan.outputs.has_changes }}
-  artifact_name: ${{ steps.destroy_plan.outputs.archive_name }}
+jobs:
+  destroy-plan:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      has_changes: ${{ steps.destroy_plan.outputs.has_changes }}
+      artifact_name: ${{ steps.destroy_plan.outputs.archive_name }}
+    steps:
+      - name: Create destroy plan
+        id: destroy_plan
+        uses: shivakpkp/terraform-actions/terraform-destroy@88d4f8315b18253db89e1381d9b7d8f5178abfb5
+        with:
+          working_directory: environment/dev
+          terraform_version: "1.5.7"
+          plan_artifact_name: destroy-dev
+
+  destroy-apply:
+    needs: destroy-plan
+    if: needs.destroy-plan.outputs.has_changes == 'true'
+    runs-on: ubuntu-24.04
+    environment: dev
+    permissions:
+      contents: read
+    steps:
+      - name: Apply saved destroy plan
+        uses: shivakpkp/terraform-actions/terraform-apply@88d4f8315b18253db89e1381d9b7d8f5178abfb5
+        with:
+          working_directory: environment/dev
+          terraform_version: "1.5.7"
+          plan_artifact_name: ${{ needs.destroy-plan.outputs.artifact_name }}
+          plan_file_name: tfplan-destroy
 ```
 
-In the apply job, set `needs: destroy-plan`, use `if: needs.destroy-plan.outputs.has_changes == 'true'`, and pass `${{ needs.destroy-plan.outputs.artifact_name }}` to the apply action's `plan_artifact_name` input. Configure an approval environment on that job before applying a destroy plan.
+Configure required reviewers on the `dev` environment to require approval before deletion; the environment name alone does not enable approval. If credentials are environment-scoped, configure the appropriate environment on each job that needs them. Use workflow concurrency shared with deployment workflows targeting the same state.
+
+## Compatibility
+
+Existing callers may omit `plan_artifact_name` and continue to receive the `tfplan-destroy` artifact. The existing outputs `has_changes` and `archive_name` are preserved. When using a custom artifact name, pass `plan_file_name: tfplan-destroy` to the apply action.
+
+Use a commit or release containing these changes for the new input. Older release tags do not gain new inputs automatically.
